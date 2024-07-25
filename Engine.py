@@ -26,6 +26,8 @@ class GameState:
 
         self.boardLog = {}
 
+        self.fiftyMoveDraw = [0]
+
 
     def makeMove(self, move):
         self.moveLog.append(move)
@@ -36,8 +38,6 @@ class GameState:
         else:
             self.board[move.endRow][move.endCol] = move.pieceMoved
         self.whiteToMove = not self.whiteToMove
-
-
 
         if move.pieceMoved == 'wK':
             self.whiteKingLocation = (move.endRow, move.endCol)
@@ -58,10 +58,26 @@ class GameState:
             self.board[move.endRow][move.endCol - 2] = '--'
             self.board[move.endRow][move.endCol + 1] = move.pieceMoved[0] + 'R'
 
-
         if len(self.moveLog) >= 8:
             if (self.moveLog[-1] == self.moveLog[-5]) and (self.moveLog[-2] == self.moveLog[-6]) and (self.moveLog[-3] == self.moveLog[-7]) and (self.moveLog[-4] == self.moveLog[-8]):
                 self.staleMate = True
+
+        num = 0
+        for i in self.board:
+            for c in i:
+                if c != '--' and c != 'wK' and c != 'bK':
+                    num = -1
+                    break
+        if num == 0:
+            self.staleMate = True
+
+        if 'p' in move.pieceMoved or move.pieceCaptured != '--' or move.anpassen:
+            self.fiftyMoveDraw.append(0)
+        else:
+            self.fiftyMoveDraw.append(self.fiftyMoveDraw[-1] + 1)
+
+        if self.fiftyMoveDraw[-1] >= 100:
+            self.staleMate = True
 
 
     def undoMove(self):
@@ -104,6 +120,9 @@ class GameState:
                 self.anpassenSq = self.moveLog[-1].createAnpassen
             else:
                 self.anpassenSq = ()
+
+            if len(self.fiftyMoveDraw) >= 1:
+                self.fiftyMoveDraw.pop()
 
 
     def updateCastleRights(self, move):
@@ -164,7 +183,14 @@ class GameState:
                 self.staleMate = True
         else:
             self.checkMate = False
-            self.staleMate = False
+
+    def getCheckMate(self):
+        self.getValidMoves()
+        return self.checkMate
+
+    def getStaleMate(self):
+        self.getValidMoves()
+        return self.staleMate
 
     def inCheck(self):
         if self.whiteToMove:
@@ -500,6 +526,9 @@ class Move:
 
     def getRankFile(self, r, c):
         return self.colsToFiles[c] + self.rowsToRanks[r]
+
+    def setPawnPromotionType(self, type):
+        self.pawnPromotionType = self.pieceMoved[0] + type
 
 
 

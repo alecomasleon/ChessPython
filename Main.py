@@ -1,6 +1,9 @@
 import pygame as p
 import Engine
 import Player
+import NeuralNetworkPlayer
+import numpy as np
+import TrainNeuralNetwork as tnn
 
 WIDTH = HEIGHT = 512
 DIMENSION = 8
@@ -33,7 +36,13 @@ def main():
     gameOver = False
     printGameOver = 0
 
-    comp = Player.Player(gs)
+    var = NeuralNetworkPlayer.NeuralNetworkPlayer.NODES_PER_LAYER
+
+    comp_file = open('training_players.txt', 'r')
+    comp = tnn.comp_from_logged_string(comp_file.readlines()[-2])
+    comp_file.close()
+    comp.set_gs(gs)
+    # comp = Player.Player(gs)
 
     while running:
         if gs.whiteToMove or gs.checkMate or gs.staleMate:
@@ -85,11 +94,13 @@ def main():
                             printGameOver = 0
         else:
             if not gs.staleMate and not gs.checkMate:
-                compMove = comp.findMove()[0]
+                # compMove = comp.findMove()[0]
+                # compMove = comp.find_move_with_model()
+                compMove = comp.find_move()
                 try:
                     gs.makeMove(compMove)
                 except:
-                    print('a')
+                    print('Computers move not accepted.')
                 moveMade = True
                 p.event.clear()
 
@@ -131,6 +142,7 @@ def main():
         p.display.flip()
 
 TRANSPARENCY = 150
+
 
 def pawnPromotionScreen(screen, color):
     sq = SQ_SIZE*2

@@ -1,4 +1,6 @@
 import random as r
+import pickle as p
+import numpy as np
 
 
 class Player:
@@ -23,9 +25,16 @@ class Player:
             [2, 1, 0, 0, 0, 0, 1, 2],
             [3, 3, 3, 0, 0, 3, 3, 3]]
     RECURSION_DEPTH = 2
+    model = 0
 
-    def __init__(self, gs):
+    def __init__(self, gs=None, model_file_name=""):
         self.gs = gs
+
+        model_file_name = "SGD_classifier_model"
+        if not model_file_name.__eq__(""):
+            f = open(model_file_name, 'rb')
+            self.model = p.load(f)
+            f.close()
 
     def findRandMove(self):
         validMoves = self.gs.getValidMoves()
@@ -34,11 +43,12 @@ class Player:
         move = r.choice(validMoves)
 
         if move.isPawnPromotion:
-            move.pawnPromotionType = r.choice(self.pawnPromotionTypes)
+            move.setPawnPromotionType(r.choice(self.pawnPromotionTypes))
         #print(self.ratePosition())
         return move
 
     def findMove(self, count= RECURSION_DEPTH):
+        # return self.find_move_with_model()
         #return (self.findRandMove(), 0)
         validMoves = self.gs.getValidMoves()
 
@@ -103,4 +113,18 @@ class Player:
             rating['b'] += self.kingRating[self.gs.blackKingLocation[0]][self.gs.blackKingLocation[1]]
 
         return rating
+
+    def find_move_with_model(self):
+        validMoves = self.gs.getValidMoves()
+        lis = []
+        board = self.gs.board_to_nums()
+        for i in validMoves:
+            self.gs.makeMove(i)
+            lis.append(np.array(board + self.gs.board_to_nums()))
+            self.gs.undoMove()
+        ans = self.model.predict(np.array(lis)).tolist()
+        return validMoves[ans.index(max(ans))]
+
+    def set_gs(self, gs):
+        self.gs = gs
 
